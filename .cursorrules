@@ -1,0 +1,236 @@
+# Gemini Research Agent MCP Server - Cursor Rules
+
+## Project Overview
+This is a Model Context Protocol (MCP) server that provides AI-powered research capabilities using Google's Gemini models with integrated web search functionality. The project replicates a sophisticated LangGraph research workflow as an MCP server.
+
+## Technology Stack
+- **Language**: Python 3.11+
+- **Framework**: FastMCP (Model Context Protocol)
+- **AI Models**: Google Gemini (2.0 Flash, 2.5 Flash Preview, 2.5 Pro Preview)
+- **Workflow**: LangGraph for state management and orchestration
+- **Dependencies**: UV package manager, Pydantic, LangChain
+- **Search**: Google Search API via Gemini grounding
+
+## Project Structure
+```
+src/
+├── server.py          # Main MCP server with FastMCP
+├── graph.py           # LangGraph workflow (core logic)
+├── state.py           # TypedDict state definitions
+├── config.py          # Configuration management
+├── models.py          # Pydantic models
+├── prompts.py         # Prompt templates
+└── utils.py           # Utility functions
+```
+
+## Code Style & Standards
+
+### Python Style
+- Use Python 3.11+ features when appropriate
+- Follow PEP 8 naming conventions
+- Use type hints everywhere (`from typing import`)
+- Use Pydantic models for data validation
+- Prefer dataclasses/TypedDict for simple data structures
+- Use descriptive variable names
+
+### Import Organization
+```python
+# Standard library
+import os
+import json
+from typing import Any, Dict, List
+
+# Third-party
+from langchain_core.messages import HumanMessage
+from mcp.server.fastmcp import FastMCP
+
+# Local
+from src.config import ResearchConfig
+from src.graph import graph
+```
+
+### Error Handling
+- Use try-except blocks for external API calls
+- Return meaningful error messages to users
+- Log errors but don't expose internal details
+- Handle Gemini API failures gracefully
+
+## MCP Server Guidelines
+
+### Tool Design
+- Keep tools simple and focused
+- Use clear, descriptive tool names
+- Provide comprehensive docstrings with examples
+- Return user-friendly strings, not complex objects
+- Handle all parameters validation
+
+### Resource Design
+- Use hierarchical resource URIs (`research://config`)
+- Return JSON for structured data
+- Keep resource responses human-readable
+- Document all available resources
+
+### FastMCP Patterns
+```python
+@mcp.tool()
+def tool_name(param: str) -> str:
+    """Clear description of what this tool does."""
+    try:
+        # Implementation
+        return result
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+@mcp.resource("resource://path")
+def get_resource() -> str:
+    """Description of the resource."""
+    return json.dumps(data, indent=2)
+```
+
+## LangGraph Workflow Guidelines
+
+### State Management
+- Use TypedDict for all state definitions
+- Keep state immutable where possible
+- Document all state fields clearly
+- Use descriptive state class names
+
+### Node Implementation
+```python
+def node_name(state: StateType, config: RunnableConfig) -> StateUpdate:
+    """Node description with clear inputs/outputs."""
+    # Implementation
+    return {"key": value}
+```
+
+### Graph Construction
+- Use clear node and edge names
+- Document the workflow in comments
+- Handle conditional edges properly
+- Ensure proper START/END connections
+
+## Configuration Management
+
+### Environment Variables
+- Use descriptive environment variable names
+- Provide sensible defaults
+- Validate required variables on startup
+- Support both .env files and direct env vars
+
+### Configuration Class
+```python
+class Config(BaseModel):
+    field: str = Field(
+        default="default_value",
+        metadata={"description": "Clear description"}
+    )
+```
+
+## API Integration Guidelines
+
+### Gemini API
+- Use appropriate models for different tasks
+- Handle rate limits and retries
+- Parse grounding metadata correctly
+- Maintain citation accuracy
+
+### Error Handling
+- Catch specific Gemini API exceptions
+- Provide fallback behavior when possible
+- Log API call details for debugging
+- Return user-friendly error messages
+
+## Testing Guidelines
+
+### Local Testing
+- Test with `uv run mcp dev src/server.py`
+- Use MCP Inspector for development
+- Test with real API keys when possible
+- Validate tool responses manually
+
+### Integration Testing
+- Test with Claude Desktop configuration
+- Verify all tools work end-to-end
+- Check resource endpoints
+- Validate error handling
+
+## Security & Best Practices
+
+### API Keys
+- Never commit API keys to version control
+- Use environment variables for secrets
+- Validate API key presence on startup
+- Handle missing credentials gracefully
+
+### Input Validation
+- Validate all user inputs
+- Sanitize search queries
+- Handle malformed requests
+- Prevent injection attacks
+
+## Documentation Standards
+
+### Docstrings
+```python
+def function_name(param: type) -> type:
+    """
+    Brief description of function purpose.
+
+    Args:
+        param: Description of parameter
+
+    Returns:
+        Description of return value
+
+    Raises:
+        ExceptionType: When this exception occurs
+    """
+```
+
+### Comments
+- Explain complex workflow logic
+- Document API-specific behaviors
+- Clarify non-obvious implementations
+- Reference original agent behavior when relevant
+
+## Development Workflow
+
+### File Modifications
+- Always test after modifying graph.py
+- Update state.py when adding new state fields
+- Sync configuration changes with environment examples
+- Update README when adding new features
+
+### Debugging
+- Use `uv run src/server.py` for direct testing
+- Check MCP Inspector output for errors
+- Validate Gemini API responses
+- Monitor resource usage and performance
+
+## Common Patterns
+
+### Prompt Formatting
+```python
+formatted_prompt = PROMPT_TEMPLATE.format(
+    current_date=get_current_date(),
+    research_topic=get_research_topic(state["messages"]),
+    specific_param=value
+)
+```
+
+### Citation Handling
+- Always preserve citation metadata
+- Use URL resolution for clean citations
+- Maintain source tracking through workflow
+- Format citations consistently
+
+### State Updates
+```python
+return {
+    "field_name": new_value,
+    "list_field": [item1, item2],
+    "counter": state.get("counter", 0) + 1
+}
+```
+
+Remember: This project replicates complex research agent functionality through a simple MCP interface. Maintain the sophistication of the underlying workflow while keeping the MCP API clean and user-friendly.
