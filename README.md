@@ -69,4 +69,10 @@ uv run src/server.py
 
 ---
 
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) and the core logic is inspired by [Gemini Fullstack LangGraph Quickstart](https://github.com/google-gemini/gemini-fullstack-langgraph-quickstart)
+
+
+
 *Built with LangGraph • Powered by Gemini • Designed for MCP*
