@@ -29,38 +29,38 @@ mcp = FastMCP("Gemini Research Agent")
 config = ResearchConfig.from_env()
 
 @mcp.tool()
-async def research_question(question: str) -> str:
+async def collect_research(
+    question: str,
+    initial_queries: int = None,
+    max_loops: int = None,
+    timeout: int = None
+) -> str:
     """
-    Conduct comprehensive research on any topic using Google's Gemini AI models.
+    Collect comprehensive research data on any topic using Gemini AI and web search.
 
-    This tool provides sophisticated AI-powered research capabilities including:
-    - Multi-query search strategy generation
-    - Web search with Gemini grounding
-    - Iterative refinement and reflection
-    - Source citation and verification
-    - Comprehensive synthesis of findings
-
-    The research process uses a multi-agent workflow that generates search queries,
-    conducts web searches, reflects on findings, and produces detailed analyses with
-    proper source citations.
+    Performs intelligent web research with multiple search strategies, iterative
+    refinement, and source verification. Returns structured data for synthesis.
 
     Args:
         question: The research question or topic to investigate
+        initial_queries: Number of initial search queries to generate (default: 3)
+        max_loops: Maximum research loops for follow-up searches (default: 2)
+        timeout: Request timeout in seconds (default: 60)
 
     Returns:
-        A comprehensive research report with findings, analysis, and source citations
+        Structured research data including search queries used, findings with
+        citations, source URLs, reflection analysis, and research metadata.
 
-    Raises:
-        TimeoutError: If research takes longer than configured timeout
-        ValueError: If question is empty or invalid
-        RuntimeError: If research workflow fails
+    Example:
+        collect_research("What are the latest developments in quantum computing?")
+        collect_research("AI safety research 2024", initial_queries=5, max_loops=3)
     """
     if not question or not question.strip():
         raise ValueError("Question cannot be empty")
 
     try:
-        # Set up timeout handling
-        timeout_seconds = int(os.environ.get('MCP_SERVER_REQUEST_TIMEOUT', '60'))
+        # Set up timeout handling - use parameter or environment variable
+        timeout_seconds = timeout or int(os.environ.get('MCP_SERVER_REQUEST_TIMEOUT', '60'))
 
         async def run_research():
             """Run the research workflow with timeout protection"""
@@ -76,8 +76,8 @@ async def research_question(question: str) -> str:
                     "research_loop_count": 0,
                     "number_of_ran_queries": 0,
                     "sources_gathered": [],
-                    "initial_search_query_count": None,
-                    "max_research_loops": None,
+                    "initial_search_query_count": initial_queries,  # Use parameter
+                    "max_research_loops": max_loops,  # Use parameter
                     "reasoning_model": None,
                     "is_sufficient": False,
                     "knowledge_gap": None,
@@ -149,7 +149,7 @@ Current timeout: {timeout_seconds}s
 Suggested timeout for complex research: 120-300s"""
 
     except Exception as e:
-        error_msg = f"Error in research_question: {str(e)}"
+        error_msg = f"Error in collect_research: {str(e)}"
         print(f"ERROR: {error_msg}")
         return f"Research failed: {error_msg}"
 
@@ -160,12 +160,17 @@ def get_config() -> str:
         "current_models": {
             "query_generation": config.query_generator_model,
             "reflection": config.reflection_model,
-            "final_answer": config.answer_model
+            "note": "No longer using answer_model - raw research data is returned for agent synthesis"
         },
         "research_parameters": {
             "number_of_initial_queries": config.number_of_initial_queries,
             "max_research_loops": config.max_research_loops,
             "temperature": config.query_temperature
+        },
+        "output_format": {
+            "type": "structured_research_data",
+            "description": "Returns raw research findings, sources, and analysis for agent synthesis",
+            "includes": ["search_queries", "research_results", "sources_citations", "reflection_analysis"]
         },
         "timeout_settings": {
             "mcp_server_request_timeout": os.environ.get('MCP_SERVER_REQUEST_TIMEOUT', '60'),
@@ -187,7 +192,7 @@ if __name__ == "__main__":
     print("=" * 60)
     print(f"📊 Query Model: {config.query_generator_model}")
     print(f"🤔 Reflection Model: {config.reflection_model}")
-    print(f"📝 Answer Model: {config.answer_model}")
+    print(f"📋 Output: Structured research data (no final synthesis)")
     print(f"🔍 Initial Queries: {config.number_of_initial_queries}")
     print(f"🔄 Max Research Loops: {config.max_research_loops}")
 
@@ -201,7 +206,7 @@ if __name__ == "__main__":
         print("⚠️  Consider setting MCP_SERVER_REQUEST_TIMEOUT=120 for complex research")
 
     print("=" * 60)
-    print("Tools: research_question")
+    print("Tools: collect_research")
     print("Resources: research://config")
     print("=" * 60)
 

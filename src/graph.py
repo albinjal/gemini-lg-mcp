@@ -180,14 +180,14 @@ def evaluate_research(
     """LangGraph routing function that determines the next step in the research flow.
 
     Controls the research loop by deciding whether to continue gathering information
-    or to finalize the summary based on the configured maximum number of research loops.
+    or to end the research based on the configured maximum number of research loops.
 
     Args:
         state: Current graph state containing the research loop count
         config: Configuration for the runnable, including max_research_loops setting
 
     Returns:
-        String literal indicating the next node to visit ("web_research" or "finalize_summary")
+        String literal indicating the next node to visit ("web_research" or "format_results")
     """
     max_research_loops = (
         state.get("max_research_loops")
@@ -195,7 +195,7 @@ def evaluate_research(
         else global_config.max_research_loops
     )
     if state["is_sufficient"] or state["research_loop_count"] >= max_research_loops:
-        return "finalize_answer"
+        return "format_results"
     else:
         return [
             Send(
@@ -209,61 +209,60 @@ def evaluate_research(
         ]
 
 
-def finalize_answer(state: OverallState, config: RunnableConfig):
-    """LangGraph node that finalizes the research summary.
+def format_results(state: OverallState, config: RunnableConfig):
+    """LangGraph node that formats the research results for the calling agent.
 
-    Prepares the final output by deduplicating and formatting sources, then
-    combining them with the running summary to create a well-structured
-    research report with proper citations.
+    Instead of generating a final answer, this returns structured research data
+    that the calling agent can use to synthesize as needed.
 
     Args:
-        state: Current graph state containing the running summary and sources gathered
+        state: Current graph state containing all research data
 
     Returns:
-        Dictionary with state update, including running_summary key containing the formatted final summary with sources
+        Dictionary with formatted research results
     """
-    reasoning_model = state.get("reasoning_model") or global_config.answer_model
+    from langchain_core.messages import AIMessage
 
-    # Format the prompt
-    current_date = get_current_date()
-    formatted_prompt = ANSWER_INSTRUCTIONS.format(
-        current_date=current_date,
-        research_topic=get_research_topic(state["messages"]),
-        summaries="\n---\n\n".join(state["web_research_result"]),
-    )
+    # Format the research results into a structured format
+    research_summary = {
+        "research_topic": get_research_topic(state["messages"]),
+        "total_search_queries": len(state["search_query"]),
+        "search_queries_used": state["search_query"],
+        "research_loops_completed": state["research_loop_count"],
+        "research_results": state["web_research_result"],
+        "sources_and_citations": state["sources_gathered"],
+        "reflection_analysis": {
+            "knowledge_gaps_identified": state.get("knowledge_gap", "None"),
+            "research_deemed_sufficient": state.get("is_sufficient", False),
+            "follow_up_queries_suggested": state.get("follow_up_queries", [])
+        }
+    }
 
-    # init Reasoning Model, default to Gemini 2.5 Pro
-    llm = ChatGoogleGenerativeAI(
-        model=reasoning_model,
-        temperature=global_config.answer_temperature,
-        max_retries=2,
-        api_key=global_config.gemini_api_key,
-    )
-    result = llm.invoke(formatted_prompt)
+    # Create a formatted message with the research data
+    formatted_content = f"""Research completed for: {research_summary['research_topic']}
 
-    # Replace the short urls with the original urls and add all used urls to the sources_gathered
-    unique_sources = []
+RESEARCH SUMMARY:
+- Total search queries executed: {research_summary['total_search_queries']}
+- Research loops completed: {research_summary['research_loops_completed']}
+- Research deemed sufficient: {research_summary['reflection_analysis']['research_deemed_sufficient']}
 
-    # Get the content from the result - handle both message objects and dict objects
-    if hasattr(result, 'content'):
-        content = result.content
-    elif isinstance(result, dict) and 'content' in result:
-        content = result['content']
-    elif isinstance(result, str):
-        content = result
-    else:
-        content = str(result)
+SEARCH QUERIES USED:
+{chr(10).join(f"• {query}" for query in research_summary['search_queries_used'])}
 
-    for source in state["sources_gathered"]:
-        if source["short_url"] in content:
-            content = content.replace(
-                source["short_url"], source["value"]
-            )
-            unique_sources.append(source)
+RESEARCH FINDINGS:
+{chr(10).join(f"{i+1}. {result}" for i, result in enumerate(research_summary['research_results']))}
+
+SOURCES & CITATIONS:
+{chr(10).join(f"• {source.get('value', str(source))}" for source in research_summary['sources_and_citations'])}
+
+REFLECTION ANALYSIS:
+- Knowledge gaps identified: {research_summary['reflection_analysis']['knowledge_gaps_identified']}
+- Suggested follow-up queries: {', '.join(research_summary['reflection_analysis']['follow_up_queries_suggested']) if research_summary['reflection_analysis']['follow_up_queries_suggested'] else 'None'}
+
+This research data can now be synthesized and analyzed as needed."""
 
     return {
-        "messages": [AIMessage(content=content)],
-        "sources_gathered": unique_sources,
+        "messages": [AIMessage(content=formatted_content)],
     }
 
 
@@ -274,7 +273,7 @@ builder = StateGraph(OverallState, config_schema=ResearchConfig)
 builder.add_node("generate_query", generate_query)
 builder.add_node("web_research", web_research)
 builder.add_node("reflection", reflection)
-builder.add_node("finalize_answer", finalize_answer)
+builder.add_node("format_results", format_results)
 
 # Set the entrypoint as `generate_query`
 # This means that this node is the first one called
@@ -287,9 +286,9 @@ builder.add_conditional_edges(
 builder.add_edge("web_research", "reflection")
 # Evaluate the research
 builder.add_conditional_edges(
-    "reflection", evaluate_research, ["web_research", "finalize_answer"]
+    "reflection", evaluate_research, ["web_research", "format_results"]
 )
-# Finalize the answer
-builder.add_edge("finalize_answer", END)
+# Format and return results instead of generating final answer
+builder.add_edge("format_results", END)
 
 graph = builder.compile(name="pro-search-agent")
