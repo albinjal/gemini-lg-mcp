@@ -243,15 +243,26 @@ def finalize_answer(state: OverallState, config: RunnableConfig):
 
     # Replace the short urls with the original urls and add all used urls to the sources_gathered
     unique_sources = []
+
+    # Get the content from the result - handle both message objects and dict objects
+    if hasattr(result, 'content'):
+        content = result.content
+    elif isinstance(result, dict) and 'content' in result:
+        content = result['content']
+    elif isinstance(result, str):
+        content = result
+    else:
+        content = str(result)
+
     for source in state["sources_gathered"]:
-        if source["short_url"] in result.content:
-            result.content = result.content.replace(
+        if source["short_url"] in content:
+            content = content.replace(
                 source["short_url"], source["value"]
             )
             unique_sources.append(source)
 
     return {
-        "messages": [AIMessage(content=result.content)],
+        "messages": [AIMessage(content=content)],
         "sources_gathered": unique_sources,
     }
 

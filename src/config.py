@@ -1,6 +1,6 @@
 import os
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ResearchConfig(BaseModel):
@@ -33,20 +33,20 @@ class ResearchConfig(BaseModel):
     )
 
     answer_model: str = Field(
-        default="gemini-2.5-pro-preview-05-06",
+        default="gemini-2.5-flash-preview-04-17",
         metadata={
             "description": "The name of the language model to use for the agent's answer."
         },
     )
 
-    # Research Parameters (matching original agent)
+    # Research Parameters (optimized for MCP timeout constraints)
     number_of_initial_queries: int = Field(
-        default=3,
+        default=2,
         metadata={"description": "The number of initial search queries to generate."},
     )
 
     max_research_loops: int = Field(
-        default=2,
+        default=1,
         metadata={"description": "The maximum number of research loops to perform."},
     )
 
@@ -71,33 +71,37 @@ class ResearchConfig(BaseModel):
         if not self.gemini_api_key:
             raise ValueError("GEMINI_API_KEY environment variable is required")
 
+    @field_validator("gemini_api_key")
+    @classmethod
+    def validate_gemini_api_key(cls, v: Optional[str]) -> Optional[str]:
+        if not v:
+            print("WARNING: GEMINI_API_KEY not found. Please set it as an environment variable.")
+        return v
+
     @classmethod
     def from_env(cls) -> "ResearchConfig":
-        """Create configuration from environment variables."""
-        # Get raw values from environment variables
-        raw_values: dict[str, Any] = {}
+        """Create configuration from environment variables with better timeout defaults"""
 
-        # Handle model configuration with environment override
-        for field_name in ["query_generator_model", "reflection_model", "answer_model"]:
-            env_value = os.environ.get(field_name.upper())
-            if env_value:
-                raw_values[field_name] = env_value
+        # Set default MCP timeout values if not already set
+        if not os.environ.get('MCP_SERVER_REQUEST_TIMEOUT'):
+            os.environ['MCP_SERVER_REQUEST_TIMEOUT'] = '120'  # 2 minutes for research operations
+        if not os.environ.get('MCP_REQUEST_MAX_TOTAL_TIMEOUT'):
+            os.environ['MCP_REQUEST_MAX_TOTAL_TIMEOUT'] = '300'  # 5 minutes total
 
-        # Handle numeric fields with environment override
-        for field_name in ["number_of_initial_queries", "max_research_loops"]:
-            env_value = os.environ.get(field_name.upper())
-            if env_value:
-                raw_values[field_name] = int(env_value)
+        return cls(
+            gemini_api_key=os.getenv("GEMINI_API_KEY"),
+            langchain_api_key=os.getenv("LANGCHAIN_API_KEY"),
+            query_generator_model=os.getenv("QUERY_GENERATION_MODEL", cls.model_fields["query_generator_model"].default),
+            reflection_model=os.getenv("REFLECTION_MODEL", cls.model_fields["reflection_model"].default),
+            answer_model=os.getenv("FINAL_ANSWER_MODEL", cls.model_fields["answer_model"].default),
+            number_of_initial_queries=int(os.getenv("NUMBER_OF_INITIAL_QUERIES", str(cls.model_fields["number_of_initial_queries"].default))),
+            max_research_loops=int(os.getenv("MAX_RESEARCH_LOOPS", str(cls.model_fields["max_research_loops"].default))),
+            query_temperature=float(os.getenv("TEMPERATURE", str(cls.model_fields["query_temperature"].default))),
+            reflection_temperature=float(os.getenv("REFLECTION_TEMPERATURE", str(cls.model_fields["reflection_temperature"].default))),
+            answer_temperature=float(os.getenv("ANSWER_TEMPERATURE", str(cls.model_fields["answer_temperature"].default)))
+        )
 
-        # Handle temperature fields with environment override
-        for field_name in ["query_temperature", "reflection_temperature", "answer_temperature"]:
-            env_value = os.environ.get(field_name.upper())
-            if env_value:
-                raw_values[field_name] = float(env_value)
-
-        # Filter out None values
-        values = {k: v for k, v in raw_values.items() if v is not None}
-
-        config = cls(**values)
-        config.validate()
-        return config
+    def get_current_date(self) -> str:
+        """Get current date in YYYY-MM-DD format"""
+        from datetime import datetime
+        return datetime.now().strftime("%Y-%m-%d")

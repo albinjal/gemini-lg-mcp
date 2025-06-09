@@ -1,12 +1,14 @@
-from typing import List, TypedDict, Optional, Any
+from typing import List, TypedDict, Optional, Any, Annotated
 from langchain_core.messages import BaseMessage
+from langgraph.graph import add_messages
+import operator
 
 
 class OverallState(TypedDict):
     """The overall state of the research agent graph."""
 
     # Input
-    messages: List[BaseMessage]
+    messages: Annotated[List[BaseMessage], add_messages]
 
     # Configuration options
     initial_search_query_count: Optional[int]
@@ -15,15 +17,15 @@ class OverallState(TypedDict):
 
     # Search queries and results
     query_list: Optional[List[str]]
-    search_query: List[str]
-    web_research_result: List[str]
+    search_query: Annotated[List[str], operator.add]
+    web_research_result: Annotated[List[str], operator.add]
 
     # Research loop tracking
     research_loop_count: int
     number_of_ran_queries: int
 
     # Sources and citations
-    sources_gathered: List[Any]
+    sources_gathered: Annotated[List[Any], operator.add]
 
 
 class QueryGenerationState(TypedDict):
