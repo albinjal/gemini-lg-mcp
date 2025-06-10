@@ -2,6 +2,8 @@
 
 🔬 **AI-powered research assistant** that performs comprehensive web research using Google's Gemini AI models.
 
+![Demo](demo.png)
+
 ## What it does
 
 - **Smart search strategies** - Generates multiple optimized search queries
@@ -33,6 +35,24 @@ Add the following to your `.cursor/mcp.json` file or Claude Desktop `mcp.json` f
   }
 }
 ```
+
+Your client might not be able to find `uvx`. In that case run `which uvx` to find the path to `uvx` and add replace the `command` with the path to `uvx`:
+
+```json
+{
+  "mcpServers": {
+    "gemini-research": {
+      "command": "<output from which uvx>",
+      "args": ["--from", "git+https://github.com/albinjal/gemini-lg-mcp.git", "python", "-m", "src.server"],
+      "env": {
+        "GEMINI_API_KEY": "your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+
 
 
 ## What you get back
