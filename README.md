@@ -1,13 +1,15 @@
-# Gemini Research MCP Server
+# Gemini LangGraph Research MCP Server
 
-🔬 **AI-powered research assistant** that performs comprehensive web research using Google's Gemini AI models.
+🔬 **AI-powered research assistant** that performs comprehensive web research using Google's Gemini AI models, Google Search and LangGraph.
 
-![Demo](demo.png)
+![Demo](assets/cursor_demo.png)
+
+![Demo](assets/claude_demo.png)
 
 ## What it does
 
 - **Smart search strategies** - Generates multiple optimized search queries
-- **Iterative research** - Follows up on knowledge gaps automatically
+- **Iterative research** - Follows up on knowledge gaps automatically using LangGraph
 - **Citation tracking** - Preserves source URLs and references
 - **Structured output** - Returns organized research data for easy use
 
@@ -85,7 +87,6 @@ uv run src/server.py
 ✅ **Finds quality sources** - Smart search with Google's index
 ✅ **Preserves citations** - Never lose track of sources
 ✅ **Customizable** - Adjust depth and scope as needed
-✅ **Cost effective** - No expensive final processing
 
 ---
 
@@ -93,6 +94,9 @@ uv run src/server.py
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) and the core logic is inspired by [Gemini Fullstack LangGraph Quickstart](https://github.com/google-gemini/gemini-fullstack-langgraph-quickstart)
 
+
+
+![LangGraph](assets/graph.png)
 
 
 *Built with LangGraph • Powered by Gemini • Designed for MCP*
