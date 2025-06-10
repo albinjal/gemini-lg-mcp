@@ -1,5 +1,6 @@
 # Gemini LangGraph Research MCP Server
 
+[![smithery badge](https://smithery.ai/badge/@albinjal/gemini-lg-mcp)](https://smithery.ai/client/@albinjal/gemini-lg-mcp)
 🔬 **AI-powered research assistant** that performs comprehensive web research using Google's Gemini AI models, Google Search and LangGraph.
 
 ![Demo](assets/cursor_demo.png)
@@ -73,6 +74,15 @@ Your client might not be able to find `uvx`. In that case run `which uvx` to fin
 
 ## Installation
 
+### Installing via Smithery
+
+To install gemini-lg-mcp for Claude Desktop automatically via [Smithery](https://smithery.ai/client/@albinjal/gemini-lg-mcp):
+
+```bash
+npx -y @smithery/cli install @albinjal/gemini-lg-mcp --client claude
+```
+
+### Manual Installation
 ```bash
 git clone https://github.com/albinjal/gemini-lg-mcp.git
 cd gemini-lg-mcp
