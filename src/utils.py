@@ -75,7 +75,9 @@ def insert_citation_markers(text: str, citations_list: List[Dict[str, Any]]) -> 
     return modified_text
 
 
-def get_citations(response: Any, resolved_urls_map: Dict[str, str]) -> List[Dict[str, Any]]:
+def get_citations(
+    response: Any, resolved_urls_map: Dict[str, str]
+) -> List[Dict[str, Any]]:
     """
     Extracts and formats citation information from a Gemini model's response.
 

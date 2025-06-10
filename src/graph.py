@@ -1,7 +1,5 @@
-import os
 
 from src.models import SearchQueryList, Reflection
-from langchain_core.messages import AIMessage
 from langgraph.types import Send
 from langgraph.graph import StateGraph
 from langgraph.graph import START, END
@@ -20,7 +18,6 @@ from src.prompts import (
     QUERY_WRITER_INSTRUCTIONS,
     WEB_SEARCHER_INSTRUCTIONS,
     REFLECTION_INSTRUCTIONS,
-    ANSWER_INSTRUCTIONS,
 )
 from langchain_google_genai import ChatGoogleGenerativeAI
 from src.utils import (
@@ -234,8 +231,8 @@ def format_results(state: OverallState, config: RunnableConfig):
         "reflection_analysis": {
             "knowledge_gaps_identified": state.get("knowledge_gap", "None"),
             "research_deemed_sufficient": state.get("is_sufficient", False),
-            "follow_up_queries_suggested": state.get("follow_up_queries", [])
-        }
+            "follow_up_queries_suggested": state.get("follow_up_queries", []),
+        },
     }
 
     # Create a formatted message with the research data

@@ -9,16 +9,8 @@ using Google Search API and provides detailed, cited responses.
 import asyncio
 import json
 import os
-from typing import Any, Sequence
 
 from mcp.server.fastmcp import FastMCP
-from mcp.types import (
-    TextContent,
-    Tool,
-    INVALID_PARAMS,
-    INTERNAL_ERROR
-)
-
 from src.config import ResearchConfig
 from src.graph import graph
 
@@ -28,12 +20,13 @@ mcp = FastMCP("Gemini Research Agent")
 # Initialize configuration
 config = ResearchConfig.from_env()
 
+
 @mcp.tool()
 async def collect_research(
     question: str,
     initial_queries: int = None,
     max_loops: int = None,
-    timeout: int = None
+    timeout: int = None,
 ) -> str:
     """
     Collect comprehensive research data on any topic using Gemini AI and web search.
@@ -60,7 +53,9 @@ async def collect_research(
 
     try:
         # Set up timeout handling - use parameter or environment variable
-        timeout_seconds = timeout or int(os.environ.get('MCP_SERVER_REQUEST_TIMEOUT', '60'))
+        timeout_seconds = timeout or int(
+            os.environ.get("MCP_SERVER_REQUEST_TIMEOUT", "60")
+        )
 
         async def run_research():
             """Run the research workflow with timeout protection"""
@@ -81,7 +76,7 @@ async def collect_research(
                     "reasoning_model": None,
                     "is_sufficient": False,
                     "knowledge_gap": None,
-                    "follow_up_queries": []
+                    "follow_up_queries": [],
                 }
 
                 # Run the research graph
@@ -91,7 +86,7 @@ async def collect_research(
                 if result.get("messages") and len(result["messages"]) > 0:
                     # Get the final AI message content
                     final_message = result["messages"][-1]
-                    if hasattr(final_message, 'content'):
+                    if hasattr(final_message, "content"):
                         return final_message.content
                     else:
                         return str(final_message)
@@ -99,7 +94,9 @@ async def collect_research(
                     # Fallback: provide what we have from research
                     summary = f"Research on: {question}\n\n"
                     summary += "Key findings:\n\n"
-                    for i, research_result in enumerate(result["web_research_result"], 1):
+                    for i, research_result in enumerate(
+                        result["web_research_result"], 1
+                    ):
                         summary += f"{i}. {research_result}\n\n"
 
                     # Add sources if available
@@ -153,6 +150,7 @@ Suggested timeout for complex research: 120-300s"""
         print(f"ERROR: {error_msg}")
         return f"Research failed: {error_msg}"
 
+
 @mcp.resource("research://config")
 def get_config() -> str:
     """Get the current research configuration settings"""
@@ -160,30 +158,40 @@ def get_config() -> str:
         "current_models": {
             "query_generation": config.query_generator_model,
             "reflection": config.reflection_model,
-            "note": "No longer using answer_model - raw research data is returned for agent synthesis"
+            "note": "No longer using answer_model - raw research data is returned for agent synthesis",
         },
         "research_parameters": {
             "number_of_initial_queries": config.number_of_initial_queries,
             "max_research_loops": config.max_research_loops,
-            "temperature": config.query_temperature
+            "temperature": config.query_temperature,
         },
         "output_format": {
             "type": "structured_research_data",
             "description": "Returns raw research findings, sources, and analysis for agent synthesis",
-            "includes": ["search_queries", "research_results", "sources_citations", "reflection_analysis"]
+            "includes": [
+                "search_queries",
+                "research_results",
+                "sources_citations",
+                "reflection_analysis",
+            ],
         },
         "timeout_settings": {
-            "mcp_server_request_timeout": os.environ.get('MCP_SERVER_REQUEST_TIMEOUT', '60'),
-            "mcp_request_max_total_timeout": os.environ.get('MCP_REQUEST_MAX_TOTAL_TIMEOUT', '300'),
-            "suggestion": "Set MCP_SERVER_REQUEST_TIMEOUT=120 for complex research"
+            "mcp_server_request_timeout": os.environ.get(
+                "MCP_SERVER_REQUEST_TIMEOUT", "60"
+            ),
+            "mcp_request_max_total_timeout": os.environ.get(
+                "MCP_REQUEST_MAX_TOTAL_TIMEOUT", "300"
+            ),
+            "suggestion": "Set MCP_SERVER_REQUEST_TIMEOUT=120 for complex research",
         },
         "environment": {
             "current_date": config.get_current_date(),
             "gemini_api_configured": bool(config.gemini_api_key),
-            "langchain_tracing": bool(config.langchain_api_key)
-        }
+            "langchain_tracing": bool(config.langchain_api_key),
+        },
     }
     return json.dumps(config_dict, indent=2)
+
 
 if __name__ == "__main__":
     # Print configuration info on startup
@@ -197,8 +205,8 @@ if __name__ == "__main__":
     print(f"🔄 Max Research Loops: {config.max_research_loops}")
 
     # Print timeout configuration
-    timeout_env = os.environ.get('MCP_SERVER_REQUEST_TIMEOUT', '60')
-    max_timeout_env = os.environ.get('MCP_REQUEST_MAX_TOTAL_TIMEOUT', '300')
+    timeout_env = os.environ.get("MCP_SERVER_REQUEST_TIMEOUT", "60")
+    max_timeout_env = os.environ.get("MCP_REQUEST_MAX_TOTAL_TIMEOUT", "300")
     print(f"⏱️  Request Timeout: {timeout_env}s")
     print(f"⏱️  Max Total Timeout: {max_timeout_env}s")
 

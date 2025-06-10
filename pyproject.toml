@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Gemini-powered research agent MCP server"
 readme = "README.md"
 requires-python = ">=3.10"
-authors = [{ name = "Research Agent MCP", email = "agent@example.com" }]
+authors = [{ name = "Research Agent MCP", email = "albin.jaldevik@gmail.com" }]
 keywords = ["mcp", "gemini", "research", "ai", "search"]
 license = { text = "MIT" }
 classifiers = [

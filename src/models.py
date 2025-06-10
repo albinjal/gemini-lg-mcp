@@ -4,12 +4,14 @@ from pydantic import BaseModel, Field
 
 class SearchQuery(BaseModel):
     """A search query with rationale."""
+
     query: str = Field(description="The search query")
     rationale: str = Field(description="Explanation of why this query is relevant")
 
 
 class SearchQueryList(BaseModel):
     """List of search queries with overall rationale."""
+
     query: List[str] = Field(
         description="A list of search queries to be used for web research."
     )
@@ -20,6 +22,7 @@ class SearchQueryList(BaseModel):
 
 class Reflection(BaseModel):
     """Analysis of research completeness."""
+
     is_sufficient: bool = Field(
         description="Whether the provided summaries are sufficient to answer the user's question."
     )
@@ -33,6 +36,7 @@ class Reflection(BaseModel):
 
 class ResearchResult(BaseModel):
     """Result from a web research operation."""
+
     query: str = Field(description="The search query that was executed")
     content: str = Field(description="The research content with citations")
     sources: List[dict] = Field(description="List of source information")
@@ -40,6 +44,7 @@ class ResearchResult(BaseModel):
 
 class ComprehensiveResearchResult(BaseModel):
     """Final result from the complete research process."""
+
     question: str = Field(description="The original research question")
     answer: str = Field(description="Comprehensive answer with citations")
     sources: List[dict] = Field(description="All sources used in the research")
@@ -49,6 +54,7 @@ class ComprehensiveResearchResult(BaseModel):
 
 class ResearchSession(BaseModel):
     """State of an ongoing research session."""
+
     question: str = Field(description="The research question")
     queries_executed: List[str] = Field(default_factory=list)
     research_results: List[str] = Field(default_factory=list)
